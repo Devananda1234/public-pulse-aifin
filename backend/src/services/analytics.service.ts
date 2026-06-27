@@ -1,12 +1,10 @@
 import Report from '../models/Report';
 
-export const getDashboardStats = () => {
-  const reports = Report.find();
-  
-  const total = reports.length;
-  const resolved = reports.filter((r: any) => r.status === 'Resolved').length;
+export const getDashboardStats = async () => {
+  const total = await Report.countDocuments();
+  const resolved = await Report.countDocuments({ status: 'Resolved' });
   const active = total - resolved;
-  const critical = reports.filter((r: any) => r.severity === 'Critical' && r.status !== 'Resolved').length;
+  const critical = await Report.countDocuments({ severity: 'Critical', status: { $ne: 'Resolved' } });
   
   return { total, active, resolved, critical };
 };

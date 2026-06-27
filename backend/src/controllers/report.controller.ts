@@ -1,22 +1,35 @@
 import { Request, Response } from 'express';
 import Report from '../models/Report';
 
-export const getReports = (req: Request, res: Response): void => {
-  const reports = Report.find();
-  res.json(reports);
+export const getReports = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const reports = await Report.find();
+    res.json(reports);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch reports' });
+  }
 };
 
-export const createReport = (req: Request, res: Response): void => {
+export const createReport = async (req: Request, res: Response): Promise<void> => {
   const { title, description, category, severity, location, image } = req.body;
-  const newReport = Report.create({ title, description, category, severity, location, image });
-  res.status(201).json(newReport);
+  
+  try {
+    const newReport = await Report.create({ title, description, category, severity, location, image });
+    res.status(201).json(newReport);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to create report' });
+  }
 };
 
-export const getReportById = (req: Request, res: Response): void => {
-  const report = Report.findById(req.params.id as string);
-  if (report) {
-    res.json(report);
-  } else {
-    res.status(404).json({ error: 'Report not found' });
+export const getReportById = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const report = await Report.findOne({ id: req.params.id as string });
+    if (report) {
+      res.json(report);
+    } else {
+      res.status(404).json({ error: 'Report not found' });
+    }
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch report' });
   }
 };

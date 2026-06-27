@@ -1,43 +1,46 @@
-export const analyzeText = (description: string) => {
-  const desc = description.toLowerCase();
+import Groq from 'groq-sdk';
+
+export const analyzeText = async (description: string) => {
+  const groqApiKey = process.env.GROQ_API;
   
-  let category = 'Others';
-  let severity = 'Low';
-  let department = 'General Services';
-  let priorityScore = Math.floor(Math.random() * 30) + 10;
-  
-  if (desc.includes('garbage') || desc.includes('waste') || desc.includes('trash')) {
-    category = 'Waste Management';
-    department = 'Municipal Sanitation Department';
-    severity = 'High';
-    priorityScore = 85;
-  } else if (desc.includes('pothole') || desc.includes('road')) {
-    category = 'Roads';
-    department = 'Public Works Department';
-    severity = 'Medium';
-    priorityScore = 60;
-  } else if (desc.includes('water') || desc.includes('leak')) {
-    category = 'Water Supply';
-    department = 'Water and Sewage Board';
-    severity = 'High';
-    priorityScore = 80;
-  } else if (desc.includes('light') || desc.includes('electricity') || desc.includes('power')) {
-    category = 'Electricity';
-    department = 'Power Corporation';
-    severity = 'Medium';
-    priorityScore = 55;
-  } else if (desc.includes('safety') || desc.includes('crime') || desc.includes('suspicious')) {
-    category = 'Public Safety';
-    department = 'Local Police Department';
-    severity = 'Critical';
-    priorityScore = 95;
+  // Fallback if no API key is provided
+  if (!groqApiKey) {
+    console.warn('GROQ_API not found in .env, falling back to mock AI.');
+    return {
+      category: 'Others',
+      severity: 'Low',
+      department: 'General Services',
+      priorityScore: 30,
+      suggestedAction: 'Manual review required.'
+    };
   }
 
-  return {
-    category,
-    severity,
-    department,
-    priorityScore,
-    suggestedAction: `Immediate action recommended for ${category}.`
-  };
+  const groq = new Groq({ apiKey: groqApiKey });
+
+  const prompt = `
+    Analyze the following civic issue report description and categorize it.
+    Return ONLY a JSON object with exactly the following keys:
+    - category (string): Must be one of: "Roads", "Water Supply", "Electricity", "Waste Management", "Public Safety", "Others"
+    - severity (string): Must be one of: "Low", "Medium", "High", "Critical"
+    - department (string): The suggested government department
+    - priorityScore (number): An integer from 1 to 100
+    - suggestedAction (string): A short recommended action
+
+    Description: "${description}"
+  `;
+
+  try {
+    const chatCompletion = await groq.chat.completions.create({
+      messages: [{ role: 'user', content: prompt }],
+      model: 'llama3-8b-8192',
+      temperature: 0,
+      response_format: { type: 'json_object' }
+    });
+
+    const content = chatCompletion.choices[0]?.message?.content || '{}';
+    return JSON.parse(content);
+  } catch (error) {
+    console.error('Groq AI Analysis failed:', error);
+    throw new Error('AI Analysis failed');
+  }
 };

@@ -1,12 +1,15 @@
-// Mock User model for MVP Authentication
-const User = {
-  findOne: (credentials: any): any => {
-    // For MVP, we hardcode the admin credentials instead of storing them in the JSON DB
-    if (credentials.email === 'admin@publicpulse.ai' && credentials.password === 'admin123') {
-      return { id: 'admin-1', role: 'admin', email: 'admin@publicpulse.ai' };
-    }
-    return null;
-  }
-};
+import mongoose, { Schema, Document } from 'mongoose';
 
-export default User;
+export interface IUser extends Document {
+  email: string;
+  password?: string;
+  role: string;
+}
+
+const UserSchema: Schema = new Schema({
+  email: { type: String, required: true, unique: true },
+  password: { type: String, required: true },
+  role: { type: String, default: 'admin' },
+}, { timestamps: true });
+
+export default mongoose.models.User || mongoose.model<IUser>('User', UserSchema);

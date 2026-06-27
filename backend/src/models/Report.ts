@@ -1,45 +1,38 @@
-import { readData, writeData } from '../config/db';
+import mongoose, { Schema, Document } from 'mongoose';
 import { generateTrackingId } from '../utils/trackingId';
 
-const Report = {
-  find: (): any[] => {
-    return readData().reports;
-  },
-  
-  findById: (id: string): any => {
-    const reports = readData().reports;
-    return reports.find((r: any) => r.id === id);
-  },
+export interface IReport extends Document {
+  id: string; // The PPAI tracking ID used by frontend
+  title: string;
+  description: string;
+  category: string;
+  severity: string;
+  status: string;
+  department?: string;
+  location: string;
+  image?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
-  create: (data: any): any => {
-    const dbData = readData();
-    const newReport = {
-      id: generateTrackingId(),
-      ...data,
-      status: 'Submitted',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      department: data.department || null
-    };
-    dbData.reports.push(newReport);
-    writeData(dbData);
-    return newReport;
-  },
+const ReportSchema: Schema = new Schema({
+  id: { type: String, unique: true },
+  title: { type: String, required: true },
+  description: { type: String, required: true },
+  category: { type: String, required: true },
+  severity: { type: String, required: true },
+  status: { type: String, default: 'Submitted' },
+  department: { type: String },
+  location: { type: String, required: true },
+  image: { type: String }
+}, { timestamps: true });
 
-  findByIdAndUpdate: (id: string, updateData: any): any => {
-    const dbData = readData();
-    const index = dbData.reports.findIndex((r: any) => r.id === id);
-    if (index !== -1) {
-      dbData.reports[index] = {
-        ...dbData.reports[index],
-        ...updateData,
-        updatedAt: new Date().toISOString()
-      };
-      writeData(dbData);
-      return dbData.reports[index];
-    }
-    return null;
+ReportSchema.pre('save', function(this: any) {
+  if (!this.id) {
+    this.id = generateTrackingId();
   }
-};
+});
 
-export default Report;
+ReportSchema.index({ id: 1 });
+
+export default mongoose.models.Report || mongoose.model<IReport>('Report', ReportSchema);
