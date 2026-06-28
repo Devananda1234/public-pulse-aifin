@@ -2,8 +2,10 @@ import mongoose from 'mongoose';
 import User from '../models/User';
 
 export const connectDB = async (): Promise<void> => {
+  const mongoUrl = process.env.MONGO_URL;
+  console.log("MONGO_URL:", mongoUrl);
   try {
-    const mongoUrl = process.env.MONGO_URL;
+
     if (!mongoUrl) {
       console.warn('MONGO_URL not found in .env, skipping MongoDB connection.');
       return;
